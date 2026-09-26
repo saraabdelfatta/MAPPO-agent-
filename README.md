@@ -11,6 +11,35 @@ The goal is to train several agents to move toward their own goals while sharing
 
 ---
 
+## Project overview
+
+This repository is a compact MAPPO implementation for a cooperative multi-agent grid environment.
+
+It is designed to teach the core ideas behind MAPPO in a simple, readable way:
+
+- agents act using local observations
+- the critic sees the full environment state during training
+- all agents share a common team reward
+- PPO updates the policy in a stable and safe way
+
+```text
+Environment
+   |
+   v
+Actors (local obs) ----> actions
+   |
+   +----> shared team reward
+   |
+   v
+Rollout Buffer
+   |
+   v
+GAE + PPO Update
+   |
+   v
+Centralized Critic (global state)
+```
+
 ## Project idea
 
 This project models a cooperative multi-agent environment where:
