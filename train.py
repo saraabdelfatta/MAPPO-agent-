@@ -15,6 +15,9 @@ Training process:
 Run this file to train the MAPPO agent.
 """
 
+import argparse
+from pathlib import Path
+
 import numpy as np
 import torch
 
@@ -261,4 +264,37 @@ def train(
 
 if __name__ == "__main__":
 
-    train()
+    parser = argparse.ArgumentParser(description="Train the grid-world MAPPO prototype.")
+    parser.add_argument("--updates", type=int, default=800, help="Number of training updates.")
+    parser.add_argument("--steps", type=int, default=64, help="Environment steps per update.")
+    parser.add_argument("--agents", type=int, default=3, help="Number of agents.")
+    parser.add_argument("--seed", type=int, default=0, help="Training random seed.")
+    parser.add_argument(
+        "--checkpoint",
+        default="checkpoints/mappo_actor.pt",
+        help="Path where the trained actor checkpoint is saved.",
+    )
+    args = parser.parse_args()
+    if args.updates < 1 or args.steps < 1 or args.agents < 1:
+        parser.error("--updates, --steps, and --agents must all be positive integers")
+
+    trained_agent = train(
+        n_updates=args.updates,
+        n_steps=args.steps,
+        n_agents=args.agents,
+        seed=args.seed,
+    )
+    checkpoint_path = Path(args.checkpoint)
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "obs_dim": trained_agent.actor.net[0].in_features,
+            "n_actions": trained_agent.actor.net[-1].out_features,
+            "actor_state_dict": {
+                name: tensor.detach().cpu()
+                for name, tensor in trained_agent.actor.state_dict().items()
+            },
+        },
+        checkpoint_path,
+    )
+    print(f"Saved trained actor checkpoint to: {checkpoint_path}")

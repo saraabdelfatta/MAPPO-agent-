@@ -444,3 +444,141 @@ If you want to extend this project later, good improvements would be:
 - create a visualization of agent movement
 
 This project is a very good starting point for understanding MAPPO in a small cooperative setting.
+
+## Run the three time and performance metrics
+
+The `time_complexity/` tools report three complementary measurements. They are
+mission/performance metrics, **not** a theoretical Big-O analysis:
+
+1. **Mission makespan (simulator seconds):** time from mission start until the last
+   required task completes. For mission start `t0` and task completion times `Ci`,
+   makespan is `max(Ci) - t0`. It describes total mission duration.
+2. **Average completion time (simulator seconds):** mean time from mission start to
+   each task (or robot) completion: `sum(Ci - t0) / number_of_completions`. It shows
+   how quickly work is completed on average, not just when the final task finishes.
+3. **MAPPO inference latency (wall-clock milliseconds):** time for the trained actor
+   to produce one batched action decision for the robots. The script reports mean,
+   p50, p95, and p99 latency after warm-up. It indicates policy computation cost; it
+   does not include training or simulator stepping.
+
+The first two values use simulator timestamps; inference latency uses a wall clock.
+Do not compare the numbers directly or treat them as one unit. Use makespan and
+average completion time to assess mission speed, and inference latency to assess
+whether decisions can be produced within the robot control period. Together they
+describe task performance and decision cost. The current repository implements
+MAPPO only, so it does **not** yet provide an IPPO/rule-based comparison.
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `time_complexity/makespan.py` | Calculate makespan from a start timestamp and task completion timestamps. |
+| `time_complexity/Average_completion_time.py` | Calculate mean completion offset from mission start. |
+| `time_complexity/MAPPO_inference_time.py` | Benchmark warmed actor inference and print mean/p50/p95/p99 latency. |
+| `time_complexity/__init__.py` | Marks the metric tools as an importable Python package. |
+| `tests/test_time_complexity.py` | Tests timestamp calculations and invalid inputs. |
+| `train.py` | Trains MAPPO and saves the actor checkpoint needed by the inference benchmark. |
+
+### Install and run in the VS Code terminal (Windows PowerShell)
+
+Open **Terminal -> New Terminal** in VS Code. These commands create a virtual
+environment for your locally selected Python; `.venv` is ignored by Git and must
+not be committed. You can use a different supported Python version by selecting
+that version when creating the environment. For example, use
+`py -3.11 -m venv .venv` (replace `3.11` with your installed version) with the
+Windows Python Launcher, or invoke that version's `python.exe` directly.
+
+```powershell
+git clone https://github.com/saraabdelfatta/MAPPO-agent-.git
+cd MAPPO-agent-
+python --version
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+If the virtual environment already exists for the Python version you want, skip
+`python -m venv .venv`. If it was created with a different Python version, remove
+that local `.venv` directory yourself and recreate it with the desired interpreter;
+the environment folder is machine-specific and is not part of the repository.
+
+Run the metric tests:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_time_complexity.py" -v
+```
+
+Try the two timestamp calculators with sample data (mission starts at 10 seconds;
+the tasks finish at 22, 25, and 28 seconds):
+
+```powershell
+.\.venv\Scripts\python.exe -m time_complexity.makespan --start 10 --completion-times 22 25 28
+.\.venv\Scripts\python.exe -m time_complexity.Average_completion_time --start 10 --completion-times 22 25 28
+```
+
+Expected sample results are makespan **18.000 simulator seconds** and average
+completion time **15.000 simulator seconds**. These are example calculations, not
+measurements from an experiment. Replace the timestamps with task completion events
+from the same scenario when analyzing real runs. Both calculators require absolute
+completion timestamps and a mission start timestamp.
+
+Train a short smoke-test policy and save the checkpoint:
+
+```powershell
+.\.venv\Scripts\python.exe train.py --updates 2 --steps 8 --checkpoint checkpoints\smoke_test_actor.pt
+```
+
+Then benchmark its actor inference:
+
+```powershell
+.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\smoke_test_actor.pt --iterations 100 --warmup 10 --device auto
+```
+
+For a longer policy run, train the default model and then benchmark its checkpoint:
+
+```powershell
+.\.venv\Scripts\python.exe train.py --checkpoint checkpoints\mappo_actor.pt
+.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100 --device auto
+```
+
+The benchmark reports mean, p50, p95, and p99 milliseconds for a batched
+three-agent actor decision. `--device auto` selects CUDA when available, otherwise
+CPU; use the same device and hardware when comparing runs. A smoke-test checkpoint
+only verifies that the benchmark works and is not a research-quality trained
+policy. The benchmark currently measures the grid-world actor, not an Isaac Sim
+deployment.
+
+The inference benchmark uses a fixed three-agent batch. It reports latency for
+that workload; it does not estimate Big-O complexity or measure how inference
+scales as robot count and observation size increase. To study scaling, add runs
+across multiple agent counts and report latency against robot count on the same
+hardware.
+
+### Connecting this prototype to Isaac Sim
+
+This repository currently runs its own `SimpleMAEnv` grid world; it is **not
+connected to Isaac Sim**. When integrating Isaac Sim, keep the MAPPO actor and
+timing tools separate from simulator-specific code and implement an environment
+adapter that:
+
+- launches/attaches to Isaac Sim using an Isaac-supported Python environment,
+  opens the selected USD scene, and identifies robot, sensor, and goal prims;
+- maps simulator observations to the actor's expected local observation shape and
+  maps actor actions to the robots' control commands;
+- implements deterministic scenario reset, physics stepping at a documented
+  `physics_dt`, and the same action/observation contract as the grid environment;
+- reports authoritative task completion, collision, robot failure, and success
+  events, and obtains mission start/completion times from the **simulator clock**;
+- times actor inference separately with a monotonic wall clock (and synchronizes
+  GPU work around the timed call when applicable), excluding simulator stepping;
+- records scene/version, robot count, control frequency, seeds, and hardware so
+  comparisons can be reproduced.
+
+Do not import Isaac Sim at module import time: load simulator dependencies only
+when constructing the Isaac environment so the grid-world tools remain usable
+without Isaac Sim installed. First test reset, one action/step, time progression,
+completion events, and collision reporting in a single scenario. Then compare
+controllers on the same scene, mission, robot configuration, and seeds. The current
+inference script constructs `SimpleMAEnv` itself, so Isaac deployment benchmarking
+will require adapting its observation source to the simulator adapter while
+preserving the same timed actor-only interval.
