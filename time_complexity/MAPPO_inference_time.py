@@ -12,12 +12,10 @@ from networks import Actor
 
 
 def percentile(values: list[float], percent: float) -> float:
-    """Return one percentile of measured latency values."""
     return float(np.percentile(values, percent))
 
 
 def main() -> None:
-    """Load a trained actor, warm it up, and report inference latency statistics."""
     parser = argparse.ArgumentParser(
         description="Measure MAPPO actor decision latency on the grid-world prototype."
     )
@@ -60,7 +58,6 @@ def main() -> None:
     actor.eval()
 
     def decide(observations: list[np.ndarray]) -> None:
-        """Run one batched greedy decision for all agents."""
         obs_tensor = torch.as_tensor(
             np.asarray(observations), dtype=torch.float32, device=device
         )

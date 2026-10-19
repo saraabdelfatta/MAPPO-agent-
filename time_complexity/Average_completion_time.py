@@ -8,7 +8,6 @@ from collections.abc import Sequence
 def calculate_average_completion_time(
     start_time_s: float, completion_times_s: Sequence[float]
 ) -> float:
-    """Return the mean completion offset from mission start."""
     if not math.isfinite(start_time_s):
         raise ValueError("start_time_s must be finite")
     if not completion_times_s:
@@ -23,7 +22,6 @@ def calculate_average_completion_time(
 
 
 def main() -> None:
-    """Parse timestamps and print average completion time."""
     parser = argparse.ArgumentParser(
         description="Calculate the mean task completion time from simulator timestamps."
     )
@@ -33,7 +31,7 @@ def main() -> None:
         type=float,
         nargs="+",
         required=True,
-        help="Absolute simulator completion timestamps for tasks or robot finishes.",
+        help="Absolute simulator completion timestamps for tasks (or robot finishes).",
     )
     args = parser.parse_args()
     average = calculate_average_completion_time(args.start, args.completion_times)

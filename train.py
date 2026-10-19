@@ -267,8 +267,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the grid-world MAPPO prototype.")
     parser.add_argument("--updates", type=int, default=800, help="Number of training updates.")
     parser.add_argument("--steps", type=int, default=64, help="Environment steps per update.")
-    parser.add_argument("--agents", type=int, default=3, help="Number of agents.")
-    parser.add_argument("--seed", type=int, default=0, help="Training random seed.")
+    parser.add_argument("--agents", type=int, default=3, help="Number of robots/agents.")
+    parser.add_argument("--seed", type=int, default=0, help="Random seed.")
     parser.add_argument(
         "--checkpoint",
         default="checkpoints/mappo_actor.pt",

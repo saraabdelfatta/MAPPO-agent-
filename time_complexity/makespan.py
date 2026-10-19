@@ -6,7 +6,6 @@ from collections.abc import Sequence
 
 
 def calculate_makespan(start_time_s: float, completion_times_s: Sequence[float]) -> float:
-    """Return the last completion offset from mission start."""
     if not math.isfinite(start_time_s):
         raise ValueError("start_time_s must be finite")
     if not completion_times_s:
@@ -19,7 +18,6 @@ def calculate_makespan(start_time_s: float, completion_times_s: Sequence[float])
 
 
 def main() -> None:
-    """Parse timestamps and print the mission makespan."""
     parser = argparse.ArgumentParser(
         description="Calculate mission makespan from task completion times."
     )
@@ -32,10 +30,7 @@ def main() -> None:
         help="Absolute simulator completion timestamps for required tasks.",
     )
     args = parser.parse_args()
-    print(
-        f"Mission makespan: "
-        f"{calculate_makespan(args.start, args.completion_times):.3f} sim seconds"
-    )
+    print(f"Mission makespan: {calculate_makespan(args.start, args.completion_times):.3f} sim seconds")
 
 
 if __name__ == "__main__":

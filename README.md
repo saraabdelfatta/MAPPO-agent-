@@ -432,153 +432,379 @@ then you understand the whole MAPPO workflow of this project.
 
 ---
 
-## Recommended next step
+## Research architecture and next steps
 
-If you want to extend this project later, good improvements would be:
+### What this repository does and does not demonstrate
 
-- add more agents
-- increase grid size
-- add obstacles or walls
-- use more realistic reward shaping
-- save checkpoints of the trained model
-- create a visualization of agent movement
+The current implementation is a useful MAPPO learning prototype, but its `SimpleMAEnv`
+is a grid world: it has no obstacles, physical robot dynamics, task queue, collision
+model, Isaac Sim connection, or mission-time evaluator. Its episode reward is not a
+mission-completion-time measurement. Do not use its current rewards or training output
+as evidence that MAPPO improves a real or simulated robot mission.
 
-This project is a very good starting point for understanding MAPPO in a small cooperative setting.
+Keep the existing prototype runnable while developing the research system around
+stable interfaces. A suitable target layout is:
 
-## Run the three time and performance metrics
+```text
+configs/
+  base.yaml
+  gridworld.yaml
+  isaac_sim.yaml
+envs/
+  base.py                 # reset/step/close and observation/action contract
+  gridworld.py            # current SimpleMAEnv, adapted to the interface
+  isaac_sim/              # Isaac Sim adapter; simulator-specific code stays here
+algorithms/
+  mappo.py
+  ippo.py
+  rule_based.py
+runner/
+  train.py
+  evaluate.py
+evaluation/
+  timing.py               # event-based metrics; no policy or simulator dependency
+  compare.py              # matched-scenario aggregation and reporting
+  schemas.py              # episode, task, robot, and inference records
+utils/
+  checkpoint.py
+  logging.py
+tests/
+  test_timing.py
+  test_env_contract.py
+train.py
+evaluate.py
+```
 
-The `time_complexity/` tools report three complementary measurements. They are
-mission/performance metrics, **not** a theoretical Big-O analysis:
+Refactor in small steps rather than moving every file at once. First define and test
+the environment interface; then adapt the grid world; then add evaluation and baseline
+controllers; connect Isaac Sim only when its API and robot/task definitions are
+available. Training code should depend on the environment interface, not on Isaac Sim
+imports. Isaac Sim is the simulator; it is not another name for the MAPPO algorithm.
 
-1. **Mission makespan (simulator seconds):** time from mission start until the last
-   required task completes. For mission start `t0` and task completion times `Ci`,
-   makespan is `max(Ci) - t0`. It describes total mission duration.
-2. **Average completion time (simulator seconds):** mean time from mission start to
-   each task (or robot) completion: `sum(Ci - t0) / number_of_completions`. It shows
-   how quickly work is completed on average, not just when the final task finishes.
-3. **MAPPO inference latency (wall-clock milliseconds):** time for the trained actor
-   to produce one batched action decision for the robots. The script reports mean,
-   p50, p95, and p99 latency after warm-up. It indicates policy computation cost; it
-   does not include training or simulator stepping.
+### MAPPO contract: inputs, actions, and reward
 
-The first two values use simulator timestamps; inference latency uses a wall clock.
-Do not compare the numbers directly or treat them as one unit. Use makespan and
-average completion time to assess mission speed, and inference latency to assess
-whether decisions can be produced within the robot control period. Together they
-describe task performance and decision cost. The current repository implements
-MAPPO only, so it does **not** yet provide an IPPO/rule-based comparison.
+The current grid-world contract is:
 
-### Files
+- **Actor observation:** each robot's own position, the relative vector to its assigned
+  goal, and relative positions of other robots. There is currently no obstacle or
+  task-status information.
+- **Training critic input:** the global vector of all robot positions and all goal
+  positions. This is available to the centralized critic during training only.
+- **Actions:** five discrete moves: stay, up, down, left, right.
+- **Reward:** shared team reward based on mean distance to goals, with a team bonus
+  when all robots reach their goals. This is a prototype shaping reward, not elapsed
+  mission time.
 
-| File | Purpose |
-|---|---|
-| `time_complexity/makespan.py` | Calculate makespan from a start timestamp and task completion timestamps. |
-| `time_complexity/Average_completion_time.py` | Calculate mean completion offset from mission start. |
-| `time_complexity/MAPPO_inference_time.py` | Benchmark warmed actor inference and print mean/p50/p95/p99 latency. |
-| `time_complexity/__init__.py` | Marks the metric tools as an importable Python package. |
-| `tests/test_time_complexity.py` | Tests timestamp calculations and invalid inputs. |
-| `train.py` | Trains MAPPO and saves the actor checkpoint needed by the inference benchmark. |
+Before training in a robotics simulator, specify and version the actual observation
+fields (including sensor/obstacle and task status as needed), action meaning and
+control frequency, task-completion predicate, collision rules, and reward terms.
+Do not give the decentralized actors global simulator state if the intended deployed
+robots will not have it.
 
-### Install and run in the VS Code terminal (Windows PowerShell)
+### Install, train, and run the timing tools (Windows)
 
-Open **Terminal -> New Terminal** in VS Code. These commands create a virtual
-environment for your locally selected Python; `.venv` is ignored by Git and must
-not be committed. You can use a different supported Python version by selecting
-that version when creating the environment. For example, use
-`py -3.11 -m venv .venv` (replace `3.11` with your installed version) with the
-Windows Python Launcher, or invoke that version's `python.exe` directly.
+This prototype needs Python 3.10 or newer. The current MAPPO grid-world code requires
+NumPy and PyTorch; these dependencies are listed in [`requirements.txt`](./requirements.txt).
+Isaac Sim is **not** required for the grid-world steps below and is not connected to
+this project yet.
+
+Open PowerShell in the project folder, or change to it first:
 
 ```powershell
-git clone https://github.com/saraabdelfatta/MAPPO-agent-.git
-cd MAPPO-agent-
+cd "E:\AUC\theis 2\new semaster\MAPPO Agent"
+```
+
+Create a virtual environment and install dependencies (run this once):
+
+```powershell
 python --version
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-If the virtual environment already exists for the Python version you want, skip
-`python -m venv .venv`. If it was created with a different Python version, remove
-that local `.venv` directory yourself and recreate it with the desired interpreter;
-the environment folder is machine-specific and is not part of the repository.
+If `python --version` reports an older Python version or Python is not found, install
+Python 3.10+ first, then reopen PowerShell. You can run every command below using
+`.\.venv\Scripts\python.exe`; activating the virtual environment is optional.
 
-Run the metric tests:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_time_complexity.py" -v
-```
-
-Try the two timestamp calculators with sample data (mission starts at 10 seconds;
-the tasks finish at 22, 25, and 28 seconds):
+Run the tests:
 
 ```powershell
-.\.venv\Scripts\python.exe -m time_complexity.makespan --start 10 --completion-times 22 25 28
-.\.venv\Scripts\python.exe -m time_complexity.Average_completion_time --start 10 --completion-times 22 25 28
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
+.\.venv\Scripts\python.exe -m unittest test_env_reward -v
 ```
 
-Expected sample results are makespan **18.000 simulator seconds** and average
-completion time **15.000 simulator seconds**. These are example calculations, not
-measurements from an experiment. Replace the timestamps with task completion events
-from the same scenario when analyzing real runs. Both calculators require absolute
-completion timestamps and a mission start timestamp.
+Train MAPPO and save its actor checkpoint to `checkpoints\mappo_actor.pt`:
 
-Train a short smoke-test policy and save the checkpoint:
+```powershell
+.\.venv\Scripts\python.exe train.py
+```
+
+The default training run uses 800 updates and may take a while. To check that the
+pipeline works before starting the full run:
 
 ```powershell
 .\.venv\Scripts\python.exe train.py --updates 2 --steps 8 --checkpoint checkpoints\smoke_test_actor.pt
 ```
 
-Then benchmark its actor inference:
+Then benchmark actor inference from that saved prototype checkpoint:
 
 ```powershell
-.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\smoke_test_actor.pt --iterations 100 --warmup 10 --device auto
+.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\smoke_test_actor.pt --iterations 100 --warmup 10
 ```
 
-For a longer policy run, train the default model and then benchmark its checkpoint:
+For a research-quality MAPPO inference result, first train the full policy and use
+`checkpoints\mappo_actor.pt` instead. The script measures batched actor decision
+latency for the current three-agent grid world, reports mean/p50/p95/p99 milliseconds,
+and can use `--device cpu` or `--device cuda`. Record the hardware and device; compare
+methods on the same hardware. A short smoke-test policy is only for checking the
+measurement command, not for reporting algorithm performance.
+
+### Run the separate time-metric calculators
+
+Each file in [`time_complexity/`](./time_complexity/) can be run independently as a
+Python module from the project root:
 
 ```powershell
-.\.venv\Scripts\python.exe train.py --checkpoint checkpoints\mappo_actor.pt
-.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100 --device auto
+.\.venv\Scripts\python.exe -m time_complexity.makespan --start 0 --completion-times 12 15 18
+.\.venv\Scripts\python.exe -m time_complexity.Average_completion_time --start 0 --completion-times 12 15 18
+.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100
 ```
 
-The benchmark reports mean, p50, p95, and p99 milliseconds for a batched
-three-agent actor decision. `--device auto` selects CUDA when available, otherwise
-CPU; use the same device and hardware when comparing runs. A smoke-test checkpoint
-only verifies that the benchmark works and is not a research-quality trained
-policy. The benchmark currently measures the grid-world actor, not an Isaac Sim
-deployment.
+The first illustrative input prints a makespan of 18 seconds; the second prints an
+average completion time of 15 seconds. These supplied timestamps are **example inputs,
+not measured research results**. For your experiments, replace them with task or robot
+completion timestamps from the same simulator scenario. Pass absolute simulator
+timestamps; `--start` is the mission start timestamp. The first two tools calculate
+metrics from supplied times; they do not collect events from a simulator.
 
-The inference benchmark uses a fixed three-agent batch. It reports latency for
-that workload; it does not estimate Big-O complexity or measure how inference
-scales as robot count and observation size increase. To study scaling, add runs
-across multiple agent counts and report latency against robot count on the same
-hardware.
+| Metric script | Calculates | Required input |
+|---|---|---|
+| `time_complexity/makespan.py` | Last required task completion minus mission start | Mission start and task completion timestamps |
+| `time_complexity/Average_completion_time.py` | Mean completion offset from mission start | Mission start and task or robot finish timestamps |
+| `time_complexity/MAPPO_inference_time.py` | Mean, p50, p95, and p99 wall-clock actor latency | Trained actor checkpoint and iteration count |
 
-### Connecting this prototype to Isaac Sim
+### Comparison table for the research paper
 
-This repository currently runs its own `SimpleMAEnv` grid world; it is **not
-connected to Isaac Sim**. When integrating Isaac Sim, keep the MAPPO actor and
-timing tools separate from simulator-specific code and implement an environment
-adapter that:
+Fill this table with results only after matched experiments. Use the same maps, tasks,
+start positions, robot counts, scenario seeds, and hardware/runtime for each controller.
+The current repository implements MAPPO only; **IPPO and rule-based navigation have
+not yet been implemented**, so their cells remain empty until you implement and run
+those baselines. Include the existing system as an additional column if it is a
+distinct controller.
 
-- launches/attaches to Isaac Sim using an Isaac-supported Python environment,
-  opens the selected USD scene, and identifies robot, sensor, and goal prims;
-- maps simulator observations to the actor's expected local observation shape and
-  maps actor actions to the robots' control commands;
-- implements deterministic scenario reset, physics stepping at a documented
-  `physics_dt`, and the same action/observation contract as the grid environment;
-- reports authoritative task completion, collision, robot failure, and success
-  events, and obtains mission start/completion times from the **simulator clock**;
-- times actor inference separately with a monotonic wall clock (and synchronizes
-  GPU work around the timed call when applicable), excluding simulator stepping;
-- records scene/version, robot count, control frequency, seeds, and hardware so
-  comparisons can be reproduced.
+| Metric | Rule-based navigation | IPPO | MAPPO |
+|---|---:|---:|---:|
+| Successful missions / attempted missions | — | — | — |
+| Success rate (%) | — | — | — |
+| Mission makespan, successful missions (sim s; mean ± SD) | — | — | — |
+| Average task completion time (sim s; mean ± SD) | — | — | — |
+| Average robot completion time (sim s; mean ± SD) | — | — | — |
+| Actor inference latency (ms; p50 / p95 / p99) | — | — | — |
+| Collision episodes / attempted missions | — | — | — |
+| Path length (m) | — | — | — |
+| Recovery time after defined disturbance (sim s) | — | — | — |
 
-Do not import Isaac Sim at module import time: load simulator dependencies only
-when constructing the Isaac environment so the grid-world tools remain usable
-without Isaac Sim installed. First test reset, one action/step, time progression,
-completion events, and collision reporting in a single scenario. Then compare
-controllers on the same scene, mission, robot configuration, and seeds. The current
-inference script constructs `SimpleMAEnv` itself, so Isaac deployment benchmarking
-will require adapting its observation source to the simulator adapter while
-preserving the same timed actor-only interval.
+Report the number of scenarios and training seeds, how failed or timed-out missions
+were handled, and uncertainty such as confidence intervals. Do not fill the table with
+the example calculator values or infer that MAPPO is best from inference speed alone.
+
+### Algorithms to compare
+
+Use the same approved mission plan, maps, robot count, initial poses, tasks, simulator
+settings, and evaluation scenario seeds for every controller. Compare:
+
+| Method | What it is | Main question it answers |
+|---|---|---|
+| Existing system (reference, if available) | Freeze and measure the current mission execution stack | Does the proposed controller improve the actual current system? |
+| Rule-based navigation | A documented, deterministic safe baseline (for example, shortest-path planning plus a fixed collision-avoidance rule) | Does learning improve over a transparent non-learning controller? |
+| IPPO | PPO with independent per-robot value functions; no centralized critic | Does centralized training in MAPPO help compared with independent RL? |
+| MAPPO | Shared/decentralized actors trained with a centralized critic | Does cooperative centralized training improve mission outcomes? |
+
+The three new algorithm candidates are rule-based navigation, IPPO, and MAPPO. Keep
+the existing system as an additional reference condition if it is distinct from the
+rule-based controller. If they are the same controller, document that and do not count
+it twice. Start with one clearly specified rule-based baseline; do not label an
+unimplemented controller as an experimental result.
+
+### Metrics and fair timing
+
+Record simulation time and wall-clock time separately. Define mission start after
+scenario reset and any agreed warm-up. Record task completion only when the simulator
+confirms the task's completion predicate.
+
+- **Mission makespan (sim seconds):** time of the last required task completion minus
+  mission start; report only for successful missions.
+- **Mean task completion time (sim seconds):** mean of each required task's completion
+  timestamp relative to mission start.
+- **Mean robot completion time (sim seconds):** mean of robot finish timestamps
+  relative to mission start. This is distinct from mean task completion time.
+- **Inference latency (wall-clock milliseconds):** time to produce a joint set of
+  robot actions from actor observations. Report p50, p95, and p99; warm up first and
+  use the same hardware/runtime. Do not include simulator stepping or critic training
+  in deployed actor latency.
+- **Safety and robustness:** success rate, collision episodes/count, path length, and
+  recovery time after a defined disturbance. Report failures/timeouts separately;
+  do not treat a timed-out mission as a successful makespan.
+
+Run multiple independent training seeds and evaluate each trained policy on the same
+held-out scenario IDs for all methods. Report sample counts, mean and median, and
+uncertainty (for example, confidence intervals over paired scenarios). A percent
+improvement is meaningful only for matched, successful scenarios:
+`100 * (baseline_makespan - candidate_makespan) / baseline_makespan`.
+
+The initial simulator-independent implementation is
+[`evaluation/timing.py`](./evaluation/timing.py). The runner should create one
+`MissionTimingEvaluator` per episode, call `record_task_completion`,
+`record_robot_finish`, and `record_inference_time` from verified simulator events,
+then call `result` once the episode terminates. `result` returns `None` for successful
+mission-time metrics on failures, while retaining termination elapsed time. The
+evaluator does not decide whether a task is complete; the simulator adapter must
+provide authoritative completion events.
+
+For actor latency, time one batched decision for all robots with a monotonic wall
+clock (for example, `time.perf_counter_ns()`), then pass elapsed milliseconds to
+`record_inference_time`. If running inference on a GPU, synchronize the device
+immediately before and after the timed call; otherwise asynchronous execution can
+under-report latency. Keep simulator stepping outside this timed interval.
+
+### Isaac Sim connection plan
+
+When Isaac Sim is available, implement its adapter under `envs/isaac_sim/`. It should
+translate simulator state into the agreed observation contract, send actions through
+the simulator's control interface, advance the simulation, and return rewards,
+completion events, and termination status. Keep the timing evaluator outside the
+algorithm: it should receive timestamped mission/task/robot events and actor-inference
+durations from the runner. This lets every controller use the same instrumentation.
+Validate the adapter first with reset/step/termination tests and hand-checked
+timestamps before running algorithm comparisons.
+
+Suggested order of work:
+
+1. Agree on tasks, completion/success predicates, observations, actions, and robot
+   control frequency for the intended simulator.
+2. Define the environment interface and extend the current grid world with obstacles,
+   task completion, collisions, and deterministic scenario seeds.
+3. Add the event-based timing evaluator and tests for success, timeout, task timing,
+   and inference timing.
+4. Implement and test rule-based and IPPO baselines against MAPPO using the same
+   environment interface.
+5. Extend the current actor checkpoint support to checkpoint save/load for the full
+   policy and add a held-out evaluation runner; export one result row per episode and
+   raw task/robot/inference events.
+6. Implement the Isaac Sim adapter when the simulator and robot API are available,
+   then repeat the matched-scenario evaluation there.
+
+Do not select a winning algorithm from a single run or timing metric. Prefer an
+algorithm only if its mission-time improvement is repeatable and does not come with
+unacceptable losses in success rate, collisions, or recovery performance.
+
+## Thesis architecture scaffold (`mappo-project/`)
+
+The `mappo-project/` folder is a separate architecture scaffold for the thesis:
+**LLM-driven mission planning + MAPPO execution for multi-robot systems, tested in
+Isaac Sim**. It does not replace the root-level grid-world prototype documented
+above. Its Python modules currently define interfaces and raise
+`NotImplementedError`; they are not yet a runnable trainer or simulator integration.
+
+### Architecture and responsibilities
+
+```text
+mappo-project/
+  configs/       base, Isaac Sim, frozen scenarios, and ablation settings
+  envs/          shared environment contract, grid/Isaac adapters, safety filter
+  algorithms/    actor, critic, rollout buffer, MAPPO/IPPO trainer
+  baselines/     rule-based, random, and existing-system (B0) controller interfaces
+  planning/      mission text -> plan -> validation -> plan executor
+  evaluation/    seeded runner, timing, inference benchmark, aggregation, plots
+  scripts/       multi-seed experiments and ablation orchestration
+  integration/   future ROS 2 decision bridge
+  tests/         environment, timing, comparison, scenarios, safety, Isaac placeholders
+  docs/          metrics, simulator guide, event schema, failure taxonomy, repo notes
+  train.py       training entry point interface
+  evaluate.py    fair seeded evaluation and report entry point interface
+```
+
+The intended flow is:
+
+```text
+configs/scenarios.yaml -> frozen, disjoint train/validation/test seed splits
+mission text -> LLM planner -> plan validator -> frozen approved plan
+train.py / run_experiments.py -> grid or Isaac environment + MAPPO/IPPO -> checkpoints
+evaluate.py -> every controller on the same approved plan and test scenarios
+             -> run_episode -> timing evaluator -> episodes.csv + events.jsonl
+benchmark_inference.py -> actor-only and full-pipeline latency table
+logged results -> aggregation -> plots/comparison -> report and final decision
+provenance.py -> run_metadata.json beside each result
+```
+
+Keep responsibilities separate: environments simulate; algorithms act and learn;
+the timing evaluator measures; comparison reads logged rows only. Measure makespan
+using simulator-clock time, not reward or wall-clock time. Use the same approved plan,
+scenario seeds, and safety rules for every controller in a comparison. Isaac Sim
+imports are kept inside `IsaacMultiRobotEnv.__init__`, so importing the scaffold does
+not require Isaac Sim.
+
+### Install and check the scaffold (Windows / VS Code terminal)
+
+Open a PowerShell terminal in VS Code. From the repository root, install the
+scaffold dependencies into the existing root virtual environment (or create it if
+needed):
+
+```powershell
+cd "E:\AUC\theis 2\new semaster\MAPPO Agent"
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r .\mappo-project\requirements.txt
+```
+
+If `.venv` already exists, skip `python -m venv .venv`. Check that the scaffold
+packages import and the Python files compile:
+
+```powershell
+cd .\mappo-project
+..\.venv\Scripts\python.exe -c "import envs, algorithms, baselines, evaluation, planning; print('Architecture imports OK')"
+..\.venv\Scripts\python.exe -m compileall -q envs algorithms baselines evaluation planning scripts integration tests config.py train.py evaluate.py
+```
+
+Alternatively, from the repository root, use the full path
+`.\.venv\Scripts\python.exe` and run the import check with `sys.path` pointing at
+`mappo-project`:
+
+```powershell
+cd "E:\AUC\theis 2\new semaster\MAPPO Agent"
+.\.venv\Scripts\python.exe -c "import sys; sys.path.insert(0, 'mappo-project'); import envs, algorithms, baselines, evaluation, planning; print('Architecture imports OK')"
+```
+
+These are scaffold checks only. `train.py`, `evaluate.py`, and the environment
+classes still contain stubs, so training, evaluation, and Isaac Sim execution are
+not available yet. The new scaffold test files are also placeholders; they do not
+yet validate runtime behavior. For the runnable original grid-world prototype and
+its time-metric tools, follow the root-level instructions in
+[Install, train, and run the timing tools](#install-train-and-run-the-timing-tools-windows).
+
+### What to do next
+
+Follow the requested build order, completing and testing one step at a time:
+
+1. Implement `envs/grid_env.py` and `evaluation/timing.py`; replace the related test
+   placeholders with tests for reproducible resets, the environment contract, and
+   simulator-clock metrics.
+2. Implement the rule-based baseline, episode runner, comparison utilities, and
+   frozen scenario loader. Test that train, validation, and test seeds never overlap.
+3. Implement the MAPPO/IPPO algorithm modules and `train.py`, including separate
+   validation scenarios and best/last checkpoint saving.
+4. Implement evaluation on identical approved plans and test seeds, then aggregation,
+   plots, provenance metadata, and the final report.
+5. Add and validate the inference benchmark, including warm-up, GPU synchronization,
+   hardware/device details, and separate actor-only/full-pipeline latency.
+6. Implement action masks, safety overrides with an event for every override, and
+   scheduled disturbances.
+7. Connect LLM planning, plan validation/freezing, the plan executor, and the
+   instrumented existing-system B0 controller.
+8. Integrate Isaac Sim when it is available: set the real USD scene path, implement
+   seeded reset and the shared step contract, and run the Isaac contract tests.
+
+Do not treat example timestamps, placeholder tests, reward values, or prototype
+latency as research results. Preserve scenario/seed matching and record failures,
+collisions, success, simulator-time makespan, and run provenance in experiments.
