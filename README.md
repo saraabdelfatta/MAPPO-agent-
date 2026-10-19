@@ -119,27 +119,24 @@ with the installed NVIDIA driver and CUDA runtime.
 Open a PowerShell terminal in the project folder, or change to it:
 
 ```powershell
-cd "E:\AUC\theis 2\new semaster\MAPPO Agent"
+cd "E:\\\MAPPO Agent"
 ```
 
 Create a virtual environment and install dependencies (once per environment):
 
 ```powershell
 python --version
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+-m pip install --upgrade pip
+ -m pip install -r requirements.txt
 ```
 
-Use Python 3.10 or newer. If the `python` command is not found, install Python
-and reopen PowerShell. Activating `.venv` is optional; the commands below invoke
-its Python executable directly.
+Use Python 3.10 . If the `python` command is not found, install Python
 
 ### Run tests
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
-.\.venv\Scripts\python.exe -m unittest test_env_reward -v
+-m unittest discover -s tests -p "test_*.py" -v
+-m unittest test_env_reward -v
 ```
 
 ### Train MAPPO
@@ -148,18 +145,18 @@ Run the default training job (800 updates, 64 environment steps per update,
 3 agents, seed 0):
 
 ```powershell
-.\.venv\Scripts\python.exe train.py
+python.exe train.py
 ```
 
 The actor checkpoint is saved to `checkpoints\mappo_actor.pt`. A short smoke
 run can check that training and checkpoint saving work:
 
 ```powershell
-.\.venv\Scripts\python.exe train.py --updates 2 --steps 8 --checkpoint checkpoints\smoke_test_actor.pt
+ train.py --updates 2 --steps 8 --checkpoint checkpoints\smoke_test_actor.pt
 ```
 
 Available options are `--updates`, `--steps`, `--agents`, `--seed`, and
-`--checkpoint`; run `.\.venv\Scripts\python.exe train.py --help` for details.
+`--checkpoint`; run `train.py --help` for details.
 Training reports actor/critic losses and average training/evaluation returns
 every 20 updates.
 
@@ -168,7 +165,7 @@ every 20 updates.
 After training, run the actor-only latency benchmark:
 
 ```powershell
-.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100
+. -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100
 ```
 
 The benchmark reports mean, p50, p95, and p99 latency for a batched decision
@@ -183,8 +180,8 @@ These utilities calculate metrics from timestamps passed on the command line;
 they do not collect timestamps from a simulator.
 
 ```powershell
-.\.venv\Scripts\python.exe -m time_complexity.makespan --start 0 --completion-times 12 15 18
-.\.venv\Scripts\python.exe -m time_complexity.Average_completion_time --start 0 --completion-times 12 15 18
+.-m time_complexity.makespan --start 0 --completion-times 12 15 18
+.-m time_complexity.Average_completion_time --start 0 --completion-times 12 15 18
 ```
 
 The examples produce a makespan of 18 seconds and an average completion time
