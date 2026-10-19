@@ -105,9 +105,9 @@ in this repository.
 
 ## Dependencies
 
-- **Python 3.10 or newer**
-- **NumPy 1.24 or newer**
-- **PyTorch 2.0 or newer**
+- **Python 3.10 **
+- **NumPy 1.24 **
+- **PyTorch 2.0 **
 
 The Python standard library is used for the other functionality. Dependency
 versions are declared in `requirements.txt`. GPU support is optional; training
