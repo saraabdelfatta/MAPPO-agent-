@@ -13,9 +13,13 @@ training.
 
 ## Architecture
 
-For a visual overview of the training flow, CTDE components, checkpoint, and
-standalone timing utilities, see the [MAPPO Agent program diagram](<.archify/architecture-mappo-program-diagram-20261102-011700/program diagram.html>).
-It also highlights that Isaac Sim is not currently integrated.
+Click the diagram below to open the full-size image. The interactive HTML
+version is also available as [program diagram.html](architecture-mappo-program-diagram-20261102-011700/program%20diagram.html)
+when served by a web server; GitHub's file viewer does not render repository
+HTML files as webpages. The diagram shows that Isaac Sim is not currently
+integrated.
+
+[![MAPPO Agent program diagram](architecture-mappo-program-diagram-20261102-011700/program%20diagram.png)](architecture-mappo-program-diagram-20261102-011700/program%20diagram.png)
 
 ```text
 train.py
