@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "9d499fee-6184-4054-970c-7966c0883b82",
+  "receiptId": "b91e6029-ddfb-46cc-9179-6d47f1e16422",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\candidate.json",
-  "output": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\program diagram.html",
+  "input": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\candidate.json",
+  "output": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\program diagram.html",
   "specification": {
-    "sha256": "c04dfd9e71a0e59c8b3aec93a8ef7bdfe052428911234c5aa8eb7c3d9ea9d16c",
-    "bytes": 5586
+    "sha256": "65c327044c84f4eb64ee22e96ce29658bc921162f88fe549a264facbd69eb0d4",
+    "bytes": 9071
   },
   "artifact": {
-    "sha256": "fe6cc61cb971c4558edd5960fbcdba2f3e324f8143e45d9ceda43be24912d07c",
-    "bytes": 852640
+    "sha256": "682773b682cd6ca4a4709967b60cd2bd637b22c56cbff52b2cd3922dbcb0edf4",
+    "bytes": 856225
   }
 }

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\candidate-improved.json",
+    "sha256": "65c327044c84f4eb64ee22e96ce29658bc921162f88fe549a264facbd69eb0d4",
+    "bytes": 9071
+  },
+  "artifact": {
+    "path": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\program diagram.html",
+    "sha256": "682773b682cd6ca4a4709967b60cd2bd637b22c56cbff52b2cd3922dbcb0edf4",
+    "bytes": 856225
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\review-4\\program diagram.finalize.json",
+    "summaryReceipt": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\review-4\\program diagram.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Dell\\.copilot\\session-state\\1b123d8c-4db3-46fb-99df-f52faed2284f\\files\\mappo-repo-update\\architecture-mappo-program-diagram-20261102-011700\\review-4\\program diagram.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-01T22:16:12.957Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6588,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}
