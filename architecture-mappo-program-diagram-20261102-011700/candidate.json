@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MAPPO Agent - Program Diagram",
+    "locale": "en",
+    "output": ".archify/architecture-mappo-program-diagram-20261102-011700/program diagram.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "CLI / caller",
+      "sublabel": "README.md run commands; explicit metric data",
+      "pos": [30, 270],
+      "size": [170, 72]
+    },
+    {
+      "id": "trainer",
+      "type": "backend",
+      "label": "Training runner",
+      "sublabel": "train.py - rollout, eval, save",
+      "pos": [230, 270],
+      "size": [175, 82]
+    },
+    {
+      "id": "gridworld",
+      "type": "backend",
+      "label": "SimpleMAEnv",
+      "sublabel": "env.py - obs/state/reward + done",
+      "pos": [230, 475],
+      "size": [220, 82]
+    },
+    {
+      "id": "mappo",
+      "type": "backend",
+      "label": "MAPPO controller",
+      "sublabel": "mappo.py - CTDE action + PPO update",
+      "pos": [515, 270],
+      "size": [190, 82]
+    },
+    {
+      "id": "buffer",
+      "type": "backend",
+      "label": "RolloutBuffer",
+      "sublabel": "buffer.py - experience storage + GAE",
+      "pos": [515, 475],
+      "size": [190, 82]
+    },
+    {
+      "id": "actor",
+      "type": "backend",
+      "label": "Decentralized Actor",
+      "sublabel": "networks.py - local observation -> 5 actions",
+      "pos": [800, 150],
+      "size": [195, 82]
+    },
+    {
+      "id": "critic",
+      "type": "backend",
+      "label": "Centralized Critic",
+      "sublabel": "networks.py - global state -> value estimate",
+      "pos": [800, 360],
+      "size": [205, 82]
+    },
+    {
+      "id": "checkpoint",
+      "type": "database",
+      "label": "Actor checkpoint",
+      "sublabel": "train.py writes checkpoints/mappo_actor.pt",
+      "pos": [900, 475],
+      "size": [205, 82]
+    },
+    {
+      "id": "benchmark",
+      "type": "backend",
+      "label": "Inference benchmark",
+      "sublabel": "MAPPO_inference_time.py - uses Actor",
+      "pos": [1080, 205],
+      "size": [205, 86]
+    },
+    {
+      "id": "mission-timing",
+      "type": "backend",
+      "label": "MissionTimingEvaluator",
+      "sublabel": "evaluation/timing.py - explicit event times",
+      "pos": [485, 650],
+      "size": [225, 88]
+    },
+    {
+      "id": "time-calculators",
+      "type": "backend",
+      "label": "Time calculators",
+      "sublabel": "time_complexity/makespan.py + Average_completion_time.py",
+      "pos": [780, 650],
+      "size": [250, 88]
+    }
+  ],
+  "connections": [
+    {
+      "id": "cli-to-trainer",
+      "from": "operator",
+      "to": "trainer",
+      "label": "updates, steps, agents, seed",
+      "variant": "emphasis"
+    },
+    {
+      "id": "trainer-to-gridworld",
+      "from": "trainer",
+      "to": "gridworld",
+      "label": "reset / step"
+    },
+    {
+      "id": "trainer-to-mappo",
+      "from": "trainer",
+      "to": "mappo",
+      "label": "act / update",
+      "variant": "emphasis"
+    },
+    {
+      "id": "trainer-to-buffer",
+      "from": "trainer",
+      "to": "buffer",
+      "label": "store rollout"
+    },
+    {
+      "id": "buffer-to-mappo",
+      "from": "buffer",
+      "to": "mappo",
+      "label": "GAE advantages + returns",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "mappo-to-actor",
+      "from": "mappo",
+      "to": "actor",
+      "label": "local-observation policy",
+      "variant": "emphasis"
+    },
+    {
+      "id": "mappo-to-critic",
+      "from": "mappo",
+      "to": "critic",
+      "label": "global-state value"
+    },
+    {
+      "id": "trainer-to-checkpoint",
+      "from": "trainer",
+      "to": "checkpoint",
+      "label": "save actor weights",
+      "variant": "dashed"
+    },
+    {
+      "id": "checkpoint-to-benchmark",
+      "from": "checkpoint",
+      "to": "benchmark",
+      "label": "load trained actor"
+    },
+    {
+      "id": "benchmark-to-actor",
+      "from": "benchmark",
+      "to": "actor",
+      "label": "Actor API",
+      "fromSide": "top",
+      "toSide": "right"
+    },
+    {
+      "id": "caller-to-mission-timing",
+      "from": "operator",
+      "to": "mission-timing",
+      "label": "explicit event times"
+    },
+    {
+      "id": "caller-to-time-calculators",
+      "from": "operator",
+      "to": "time-calculators",
+      "label": "start + completion times"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Training path",
+      "items": [
+        "The runner gathers rollouts, stores them, then updates the shared actor and centralized critic.",
+        "During evaluation, the runner uses greedy actions and reports average grid-world reward."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "CTDE contract",
+      "items": [
+        "Each actor uses a local observation; the critic uses the global state during training.",
+        "The actor checkpoint stores actor dimensions and weights, not critic or optimizer state."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Scope boundary",
+      "items": [
+        "The implemented environment is a small grid-world; no Isaac Sim adapter or simulator event feed is present.",
+        "Mission timing tools require explicit caller-supplied timestamps; the latency benchmark is not a simulator benchmark."
+      ]
+    }
+  ]
+}

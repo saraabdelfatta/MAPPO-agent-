@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\candidate.json",
+    "sha256": "c04dfd9e71a0e59c8b3aec93a8ef7bdfe052428911234c5aa8eb7c3d9ea9d16c",
+    "bytes": 5586
+  },
+  "artifact": {
+    "path": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\program diagram.html",
+    "sha256": "fe6cc61cb971c4558edd5960fbcdba2f3e324f8143e45d9ceda43be24912d07c",
+    "bytes": 852640
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\review-3\\program diagram.finalize.json",
+    "summaryReceipt": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\review-3\\program diagram.finalize-summary.json",
+    "browserCheckReceipt": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\review-3\\program diagram.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-01T22:16:12.957Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5528,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 1,
+      "routesOverSuggestedBends": 3
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "buffer-to-mappo",
+            "from": "buffer",
+            "to": "mappo",
+            "label": "GAE advantages + returns",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "id": "trainer-to-checkpoint",
+            "from": "trainer",
+            "to": "checkpoint",
+            "label": "save actor weights",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "point": [
+            617,
+            376
+          ]
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "cli-to-trainer",
+            "from": "operator",
+            "to": "trainer",
+            "label": "updates, steps, agents, seed",
+            "collectionIndex": 0,
+            "artifactIndex": 1
+          },
+          "bends": 3,
+          "stretch": 1.347
+        },
+        {
+          "relationship": {
+            "id": "trainer-to-checkpoint",
+            "from": "trainer",
+            "to": "checkpoint",
+            "label": "save actor weights",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "bends": 4,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "caller-to-time-calculators",
+            "from": "operator",
+            "to": "time-calculators",
+            "label": "start + completion times",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "bends": 3,
+          "stretch": 1
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "buffer → mappo crosses trainer → checkpoint: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "operator → trainer needs 3 bends: move node operator or trainer so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "trainer → checkpoint needs 4 bends: move node trainer or checkpoint so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "operator → time-calculators needs 3 bends: move node operator or time-calculators so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

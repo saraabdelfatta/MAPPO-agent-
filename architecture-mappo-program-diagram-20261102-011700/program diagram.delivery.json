@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9d499fee-6184-4054-970c-7966c0883b82",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\candidate.json",
+  "output": "E:\\AUC\\theis 2\\new semaster\\MAPPO Agent\\.archify\\architecture-mappo-program-diagram-20261102-011700\\program diagram.html",
+  "specification": {
+    "sha256": "c04dfd9e71a0e59c8b3aec93a8ef7bdfe052428911234c5aa8eb7c3d9ea9d16c",
+    "bytes": 5586
+  },
+  "artifact": {
+    "sha256": "fe6cc61cb971c4558edd5960fbcdba2f3e324f8143e45d9ceda43be24912d07c",
+    "bytes": 852640
+  }
+}

@@ -13,6 +13,10 @@ training.
 
 ## Architecture
 
+For a visual overview of the training flow, CTDE components, checkpoint, and
+standalone timing utilities, see the [MAPPO Agent program diagram](<.archify/architecture-mappo-program-diagram-20261102-011700/program diagram.html>).
+It also highlights that Isaac Sim is not currently integrated.
+
 ```text
 train.py
   ├── env.py: SimpleMAEnv (local observations, global state, reward, episodes)
@@ -105,9 +109,9 @@ in this repository.
 
 ## Dependencies
 
-- **Python 3.10 **
-- **NumPy 1.24 **
-- **PyTorch 2.0 **
+- **Python 3.10 or newer**
+- **NumPy 1.24 or newer**
+- **PyTorch 2.0 or newer**
 
 The Python standard library is used for the other functionality. Dependency
 versions are declared in `requirements.txt`. GPU support is optional; training
@@ -119,24 +123,27 @@ with the installed NVIDIA driver and CUDA runtime.
 Open a PowerShell terminal in the project folder, or change to it:
 
 ```powershell
-cd "E:\\\MAPPO Agent"
+cd "E:\AUC\theis 2\new semaster\MAPPO Agent"
 ```
 
 Create a virtual environment and install dependencies (once per environment):
 
 ```powershell
 python --version
--m pip install --upgrade pip
- -m pip install -r requirements.txt
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Use Python 3.10 . If the `python` command is not found, install Python
+Use Python 3.10 or newer. If the `python` command is not found, install Python
+and reopen PowerShell. Activating `.venv` is optional; the commands below invoke
+its Python executable directly.
 
 ### Run tests
 
 ```powershell
--m unittest discover -s tests -p "test_*.py" -v
--m unittest test_env_reward -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
+.\.venv\Scripts\python.exe -m unittest test_env_reward -v
 ```
 
 ### Train MAPPO
@@ -145,18 +152,18 @@ Run the default training job (800 updates, 64 environment steps per update,
 3 agents, seed 0):
 
 ```powershell
-python.exe train.py
+.\.venv\Scripts\python.exe train.py
 ```
 
 The actor checkpoint is saved to `checkpoints\mappo_actor.pt`. A short smoke
 run can check that training and checkpoint saving work:
 
 ```powershell
- train.py --updates 2 --steps 8 --checkpoint checkpoints\smoke_test_actor.pt
+.\.venv\Scripts\python.exe train.py --updates 2 --steps 8 --checkpoint checkpoints\smoke_test_actor.pt
 ```
 
 Available options are `--updates`, `--steps`, `--agents`, `--seed`, and
-`--checkpoint`; run `train.py --help` for details.
+`--checkpoint`; run `.\.venv\Scripts\python.exe train.py --help` for details.
 Training reports actor/critic losses and average training/evaluation returns
 every 20 updates.
 
@@ -165,7 +172,7 @@ every 20 updates.
 After training, run the actor-only latency benchmark:
 
 ```powershell
-. -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100
+.\.venv\Scripts\python.exe -m time_complexity.MAPPO_inference_time --checkpoint checkpoints\mappo_actor.pt --iterations 1000 --warmup 100
 ```
 
 The benchmark reports mean, p50, p95, and p99 latency for a batched decision
@@ -180,8 +187,8 @@ These utilities calculate metrics from timestamps passed on the command line;
 they do not collect timestamps from a simulator.
 
 ```powershell
-.-m time_complexity.makespan --start 0 --completion-times 12 15 18
-.-m time_complexity.Average_completion_time --start 0 --completion-times 12 15 18
+.\.venv\Scripts\python.exe -m time_complexity.makespan --start 0 --completion-times 12 15 18
+.\.venv\Scripts\python.exe -m time_complexity.Average_completion_time --start 0 --completion-times 12 15 18
 ```
 
 The examples produce a makespan of 18 seconds and an average completion time
