@@ -11,10 +11,32 @@ training.
 > yet. The timing utilities can calculate metrics from data, but they do not
 > read events from a simulator.
 
-## Architecture
+## Thesis Integration Architecture
+
+This proposed view is based on the Thesis II progress presentation. It marks
+the existing CyberScape, human-approval, Isaac Sim, ROS 2, and single-robot PPO
+work separately from the MAPPO integration tasks. The connections tagged
+`TO BUILD`, `ADAPT`, or `WIRE` are planned work, not implemented in this
+workspace.
+
+[Open the interactive Archify integration diagram](.archify/mappo-cyberscape-integration-20261103-112714/mappo-cyberscape-integration.html).
+[Open the presentation script](ARCHITECTURE_PRESENTATION_SCRIPT.md).
+
+![Archify diagram preview: CyberScape and MAPPO integration](.archify/mappo-cyberscape-integration-20261103-112714/visual-review/mappo-cyberscape-integration.visual-check.1440x900.light.png)
+
+## MAPPO Training Cycle
+
+This separate diagram explains only the current grid-world MAPPO training loop. It is not the CyberScape integration architecture.
+
+[Open the interactive MAPPO cycle diagram](.archify/mappo-training-cycle-20261103-114806/mappo-training-cycle.html).
+[Open the MAPPO cycle presentation script](MAPPO_TRAINING_CYCLE_SCRIPT.md).
+
+![Archify diagram preview: MAPPO training cycle](.archify/mappo-training-cycle-20261103-114806/visual-review/mappo-training-cycle.visual-check.1440x900.light.png)
+
+## Current MAPPO Prototype
 
 Click the diagram below to open the full-size image. The interactive HTML
-version is also available as [program diagram.html](architecture-mappo-program-diagram-20261102-011700/program%20diagram.html)
+version is also available as [program diagram.html](.archify/architecture-mappo-program-diagram-20261102-011700/program%20diagram.html)
 when served by a web server; GitHub's file viewer does not render repository
 HTML files as webpages. The diagram shows that Isaac Sim is not currently
 integrated.
@@ -41,36 +63,36 @@ critic using PPO. During evaluation, the actor selects greedy actions.
 
 The current grid-world action and data contract is:
 
-| Item | Current definition |
-|---|---|
-| Agents | 3 by default; configurable with `--agents` |
-| Actor input | Own grid position, vector to assigned goal, relative positions of other agents; `4 + 2 × (agents - 1)` values (8 by default) |
-| Critic input during training | All agent positions and goal positions; `4 × agents` values (12 by default) |
-| Actions | `0` stay, `1` up, `2` down, `3` left, `4` right |
-| Reward | Shared positive distance-based reward, with a bonus when all agents reach their goals |
-| Episode end | Fixed maximum of 25 environment steps |
+| Item                         | Current definition                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Agents                       | 3 by default; configurable with `--agents`                                                                                   |
+| Actor input                  | Own grid position, vector to assigned goal, relative positions of other agents; `4 + 2 × (agents - 1)` values (8 by default) |
+| Critic input during training | All agent positions and goal positions; `4 × agents` values (12 by default)                                                  |
+| Actions                      | `0` stay, `1` up, `2` down, `3` left, `4` right                                                                              |
+| Reward                       | Shared positive distance-based reward, with a bonus when all agents reach their goals                                        |
+| Episode end                  | Fixed maximum of 25 environment steps                                                                                        |
 
 The grid-world has no obstacles, physics, sensor model, task queue, collision
 handling, or simulator-clock. Its reward is not mission completion time.
 
 ## Project files
 
-| Path | Purpose |
-|---|---|
-| `env.py` | Implements `SimpleMAEnv`: creates agent/goal positions, returns local observations and global state, applies discrete moves, calculates shared rewards, and signals the step limit. |
-| `networks.py` | Defines `Actor` (local observation to action distribution) and `CentralizedCritic` (global state to value estimate). |
-| `buffer.py` | Defines `RolloutBuffer`, which stores rollout observations, states, actions, rewards, log probabilities, done flags, and values; calculates GAE and converts samples to PyTorch tensors. |
-| `mappo.py` | Implements action selection and PPO/MAPPO updates, including clipped policy loss, critic value loss, entropy regularization, and gradient clipping. |
-| `train.py` | Training entry point; collects rollouts, updates MAPPO, prints periodic evaluation metrics, and saves the trained actor checkpoint. |
-| `requirements.txt` | Lists the third-party Python packages required by the project. |
-| `checkpoints\mappo_actor.pt` | Example saved actor checkpoint present in this workspace. A training run can create or overwrite the default checkpoint. |
-| `evaluation\timing.py` | Simulator-independent `MissionTimingEvaluator`; accepts explicit task/robot completion times and actor inference durations, then reports mission metrics. No simulator events are collected automatically. |
-| `time_complexity\makespan.py` | Calculates mission makespan from a mission start time and task completion timestamps. |
-| `time_complexity\Average_completion_time.py` | Calculates average completion time from a mission start time and completion timestamps. |
-| `time_complexity\MAPPO_inference_time.py` | Measures batched greedy actor latency for the current three-agent grid-world using a trained actor checkpoint. This is not an Isaac Sim benchmark. |
-| `tests\test_timing.py` | Tests success/timeout timing results, event validation, and inference metrics. |
-| `tests\test_time_complexity.py` | Tests the standalone time metric calculators. |
-| `test_env_reward.py` | Root-level regression test for the grid-world reward. |
+| Path                                         | Purpose                                                                                                                                                                                                    |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env.py`                                     | Implements `SimpleMAEnv`: creates agent/goal positions, returns local observations and global state, applies discrete moves, calculates shared rewards, and signals the step limit.                        |
+| `networks.py`                                | Defines `Actor` (local observation to action distribution) and `CentralizedCritic` (global state to value estimate).                                                                                       |
+| `buffer.py`                                  | Defines `RolloutBuffer`, which stores rollout observations, states, actions, rewards, log probabilities, done flags, and values; calculates GAE and converts samples to PyTorch tensors.                   |
+| `mappo.py`                                   | Implements action selection and PPO/MAPPO updates, including clipped policy loss, critic value loss, entropy regularization, and gradient clipping.                                                        |
+| `train.py`                                   | Training entry point; collects rollouts, updates MAPPO, prints periodic evaluation metrics, and saves the trained actor checkpoint.                                                                        |
+| `requirements.txt`                           | Lists the third-party Python packages required by the project.                                                                                                                                             |
+| `checkpoints\mappo_actor.pt`                 | Example saved actor checkpoint present in this workspace. A training run can create or overwrite the default checkpoint.                                                                                   |
+| `evaluation\timing.py`                       | Simulator-independent `MissionTimingEvaluator`; accepts explicit task/robot completion times and actor inference durations, then reports mission metrics. No simulator events are collected automatically. |
+| `time_complexity\makespan.py`                | Calculates mission makespan from a mission start time and task completion timestamps.                                                                                                                      |
+| `time_complexity\Average_completion_time.py` | Calculates average completion time from a mission start time and completion timestamps.                                                                                                                    |
+| `time_complexity\MAPPO_inference_time.py`    | Measures batched greedy actor latency for the current three-agent grid-world using a trained actor checkpoint. This is not an Isaac Sim benchmark.                                                         |
+| `tests\test_timing.py`                       | Tests success/timeout timing results, event validation, and inference metrics.                                                                                                                             |
+| `tests\test_time_complexity.py`              | Tests the standalone time metric calculators.                                                                                                                                                              |
+| `test_env_reward.py`                         | Root-level regression test for the grid-world reward.                                                                                                                                                      |
 
 The current training script saves the actor weights and its input/action
 dimensions; it does not save the centralized critic or optimizer state for
